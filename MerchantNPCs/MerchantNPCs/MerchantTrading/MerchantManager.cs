@@ -41,7 +41,7 @@ namespace MerchantNPCs.MerchantTrading
         public void Initialize()
         {
             LoadAllMerchantConfigs();
-            MerchantNPCsPlugin.Logger.LogInfo($"Loaded {_merchantInventories.Count} merchant inventories");
+            //MerchantNPCsPlugin.Logger.LogInfo($"Loaded {_merchantInventories.Count} merchant inventories");
         }
 
         /// <summary>
@@ -106,21 +106,21 @@ namespace MerchantNPCs.MerchantTrading
         private void CreateDefaultConfig(string merchantType, List<MerchantItem> items)
         {
             string configPath = Path.Combine(_configPath, $"{merchantType.ToLower()}.txt");
-            
+
             // Create the compact format configuration file
             List<string> lines = new List<string>();
             lines.Add($"# {merchantType} Items");
             lines.Add("# Format: item:price");
             lines.Add("");
-            
+
             foreach (var item in items)
             {
                 lines.Add($"{item.ItemName}:{item.BuyPrice}");
             }
-            
+
             File.WriteAllLines(configPath, lines);
-            
-            MerchantNPCsPlugin.Logger.LogInfo($"Created default config for {merchantType}");
+
+            //MerchantNPCsPlugin.Logger.LogInfo($"Created default config for {merchantType}");
         }
 
         /// <summary>
@@ -162,7 +162,7 @@ namespace MerchantNPCs.MerchantTrading
                         MerchantNPCsPlugin.Logger.LogError($"Error converting YAML config {configFile}: {ex.Message}");
                     }
                 }
-                
+
                 // Try loading the converted files
                 txtConfigFiles = Directory.GetFiles(_configPath, "*.txt");
                 foreach (string configFile in txtConfigFiles)
@@ -181,7 +181,7 @@ namespace MerchantNPCs.MerchantTrading
             // Populate item data for all items
             PopulateItemData();
         }
-        
+
         /// <summary>
         /// Loads a merchant configuration file in the compact format
         /// </summary>
@@ -189,36 +189,36 @@ namespace MerchantNPCs.MerchantTrading
         {
             string merchantType = Path.GetFileNameWithoutExtension(configFile);
             merchantType = char.ToUpper(merchantType[0]) + merchantType.Substring(1); // Capitalize first letter
-            
+
             List<MerchantItem> items = new List<MerchantItem>();
             string[] lines = File.ReadAllLines(configFile);
-            
+
             foreach (string line in lines)
             {
                 string trimmedLine = line.Trim();
-                
+
                 // Skip empty lines and comments
                 if (string.IsNullOrWhiteSpace(trimmedLine) || trimmedLine.StartsWith("#"))
                     continue;
-                
+
                 // Parse item entries in format: item:price:requires_discovery
                 string[] parts = trimmedLine.Split(':');
                 if (parts.Length < 2)
                     continue; // Need at least item and price
-                
+
                 string itemName = parts[0].Trim();
                 string originalItemName = itemName; // Keep the original name for prefab lookup
-                
+
                 // Ensure the item name has the $item_ prefix for discovery checks
                 if (!itemName.StartsWith("$item_") && !itemName.StartsWith("$"))
                 {
                     itemName = "$item_" + itemName.Replace(" ", "_");
                 }
-                
+
                 // Parse price
                 if (!int.TryParse(parts[1].Trim(), out int price))
                     continue; // Invalid price
-                
+
                 // Add the item to the inventory
                 items.Add(new MerchantItem
                 {
@@ -227,18 +227,18 @@ namespace MerchantNPCs.MerchantTrading
                     BuyPrice = price
                 });
             }
-            
+
             // Create the inventory and add it to the dictionary
             MerchantInventory inventory = new MerchantInventory
             {
                 MerchantType = merchantType,
                 Items = items
             };
-            
+
             _merchantInventories[merchantType] = inventory;
-            MerchantNPCsPlugin.Logger.LogInfo($"Loaded merchant config for {merchantType} with {items.Count} items");
+            //MerchantNPCsPlugin.Logger.LogInfo($"Loaded merchant config for {merchantType} with {items.Count} items");
         }
-        
+
         /// <summary>
         /// Converts a YAML configuration file to the compact format
         /// </summary>
@@ -274,7 +274,7 @@ namespace MerchantNPCs.MerchantTrading
                         // Try multiple formats of the item name to find the prefab
                         GameObject prefab = null;
                         string prefabName = null;
-                        
+
                         // Format 1: Try with the prefixed item name (e.g., $item_Wood)
                         prefab = ZNetScene.instance?.GetPrefab(item.ItemName);
                         if (prefab != null)
@@ -282,7 +282,7 @@ namespace MerchantNPCs.MerchantTrading
                             prefabName = item.ItemName;
                             // MerchantNPCsPlugin.Logger.LogDebug($"Found prefab using prefixed item name: {item.ItemName}");
                         }
-                        
+
                         // Format 2: Try with the original item name without prefix (e.g., Wood)
                         if (prefab == null && !string.IsNullOrEmpty(item.OriginalItemName))
                         {
@@ -293,7 +293,7 @@ namespace MerchantNPCs.MerchantTrading
                                 // MerchantNPCsPlugin.Logger.LogDebug($"Found prefab using original item name: {item.OriginalItemName}");
                             }
                         }
-                        
+
                         // Format 3: Try with lowercase name
                         if (prefab == null)
                         {
@@ -305,7 +305,7 @@ namespace MerchantNPCs.MerchantTrading
                                 // MerchantNPCsPlugin.Logger.LogDebug($"Found prefab using lowercase name: {lowercaseName}");
                             }
                         }
-                        
+
                         // Format 4: Try without spaces and lowercase
                         if (prefab == null)
                         {
@@ -317,7 +317,7 @@ namespace MerchantNPCs.MerchantTrading
                                 // MerchantNPCsPlugin.Logger.LogDebug($"Found prefab using no spaces lowercase name: {noSpacesName}");
                             }
                         }
-                        
+
                         // Format 5: Try with first letter capitalized and no spaces
                         if (prefab == null)
                         {
@@ -333,7 +333,7 @@ namespace MerchantNPCs.MerchantTrading
                                 }
                             }
                         }
-                        
+
                         // Format 6: Try with all words capitalized and no spaces (PascalCase)
                         if (prefab == null)
                         {
@@ -353,7 +353,7 @@ namespace MerchantNPCs.MerchantTrading
                                 // MerchantNPCsPlugin.Logger.LogDebug($"Found prefab using multi-word pascal case name: {pascalCaseName}");
                             }
                         }
-                        
+
                         if (prefab != null)
                         {
                             ItemDrop itemDrop = prefab.GetComponent<ItemDrop>();
@@ -363,7 +363,7 @@ namespace MerchantNPCs.MerchantTrading
                                 // Store the actual prefab name that worked for future reference
                                 item.PrefabName = prefab.name;
                                 // MerchantNPCsPlugin.Logger.LogDebug($"Found item data for {item.ItemName}, using prefab name: {prefab.name}");
-                                
+
                                 // If the item name in the game differs from our configured name, log it for debugging
                                 if (itemDrop.m_itemData.m_shared.m_name != item.ItemName)
                                 {
@@ -426,20 +426,20 @@ namespace MerchantNPCs.MerchantTrading
                     MerchantNPCsPlugin.Logger.LogError("BuyItem: Player is null");
                     return false;
                 }
-                
+
                 if (item == null)
                 {
                     MerchantNPCsPlugin.Logger.LogError("BuyItem: Item is null");
                     player.Message(MessageHud.MessageType.Center, "Error: Invalid item");
                     return false;
                 }
-                
+
                 if (quantity <= 0)
                 {
                     MerchantNPCsPlugin.Logger.LogError($"BuyItem: Invalid quantity {quantity}");
                     return false;
                 }
-                
+
                 // MerchantNPCsPlugin.Logger.LogInfo($"Attempting to buy {quantity}x {item.ItemName}");
 
                 // Check if the item is available
@@ -453,14 +453,14 @@ namespace MerchantNPCs.MerchantTrading
                 // Check if the player has enough coins
                 int totalCost = item.BuyPrice * quantity;
                 // MerchantNPCsPlugin.Logger.LogInfo($"Total cost: {totalCost} coins");
-                
+
                 if (!HasEnoughCoins(player, totalCost))
                 {
                     // MerchantNPCsPlugin.Logger.LogInfo("Player doesn't have enough coins");
                     player.Message(MessageHud.MessageType.Center, "You don't have enough coins for that");
                     return false;
                 }
-                
+
                 // Check if item data is valid
                 if (item.ItemData == null)
                 {
@@ -483,7 +483,7 @@ namespace MerchantNPCs.MerchantTrading
 
                 // Find the prefab for the item
                 GameObject prefab = null;
-                
+
                 // Safety check for ZNetScene
                 if (ZNetScene.instance == null)
                 {
@@ -491,7 +491,7 @@ namespace MerchantNPCs.MerchantTrading
                     player.Message(MessageHud.MessageType.Center, "Error: Game scene not fully loaded");
                     return false;
                 }
-                
+
                 try
                 {
                     // Try to get the prefab by name
@@ -502,7 +502,7 @@ namespace MerchantNPCs.MerchantTrading
                 {
                     MerchantNPCsPlugin.Logger.LogError($"Exception when getting prefab by ItemName: {ex.Message}");
                 }
-                
+
                 // If that fails, try to get it by the actual item name
                 if (prefab == null && item.ItemData != null && item.ItemData.m_shared != null)
                 {
@@ -517,7 +517,7 @@ namespace MerchantNPCs.MerchantTrading
                         MerchantNPCsPlugin.Logger.LogError($"Exception when getting prefab by shared name: {ex.Message}");
                     }
                 }
-                
+
                 // If that still fails, try to get it from the ObjectDB
                 if (prefab == null && ObjectDB.instance != null)
                 {
@@ -530,7 +530,7 @@ namespace MerchantNPCs.MerchantTrading
                     {
                         MerchantNPCsPlugin.Logger.LogError($"Exception when getting prefab from ObjectDB: {ex.Message}");
                     }
-                    
+
                     // Last resort - try to find by the actual item name in the ObjectDB
                     if (prefab == null && item.ItemData != null && item.ItemData.m_shared != null)
                     {
@@ -538,14 +538,14 @@ namespace MerchantNPCs.MerchantTrading
                         {
                             string itemSharedName = item.ItemData.m_shared.m_name;
                             // MerchantNPCsPlugin.Logger.LogInfo($"Searching ObjectDB items for: {itemSharedName}");
-                            
+
                             foreach (GameObject obj in ObjectDB.instance.m_items)
                             {
                                 if (obj == null) continue;
-                                
+
                                 ItemDrop component = obj.GetComponent<ItemDrop>();
-                                if (component != null && component.m_itemData != null && 
-                                    component.m_itemData.m_shared != null && 
+                                if (component != null && component.m_itemData != null &&
+                                    component.m_itemData.m_shared != null &&
                                     component.m_itemData.m_shared.m_name == itemSharedName)
                                 {
                                     prefab = obj;
@@ -560,7 +560,7 @@ namespace MerchantNPCs.MerchantTrading
                         }
                     }
                 }
-                
+
                 // Try direct prefab creation as a last resort
                 if (prefab == null)
                 {
@@ -577,14 +577,14 @@ namespace MerchantNPCs.MerchantTrading
                         MerchantNPCsPlugin.Logger.LogError($"Exception when creating simple prefab: {ex.Message}");
                     }
                 }
-                
+
                 if (prefab == null)
                 {
                     MerchantNPCsPlugin.Logger.LogError($"Could not find or create prefab for {item.ItemName}");
                     player.Message(MessageHud.MessageType.Center, "Error: Could not find item");
                     return false;
                 }
-                
+
                 // Get the ItemDrop component
                 ItemDrop itemDrop = prefab.GetComponent<ItemDrop>();
                 if (itemDrop == null)
@@ -593,28 +593,28 @@ namespace MerchantNPCs.MerchantTrading
                     player.Message(MessageHud.MessageType.Center, "Error: Invalid item");
                     return false;
                 }
-                
+
                 // Try to add the item to player inventory
                 try
                 {
                     // Create a clone of the item data
                     ItemDrop.ItemData newItem = itemDrop.m_itemData.Clone();
                     newItem.m_stack = quantity;
-                    
+
                     // Ensure the item is properly initialized
                     if (newItem.m_shared == null)
                     {
                         MerchantNPCsPlugin.Logger.LogWarning($"Item {item.ItemName} has null m_shared, attempting to fix");
                         newItem.m_shared = itemDrop.m_itemData.m_shared;
                     }
-                    
+
                     // Ensure the item has a valid ID
                     if (string.IsNullOrEmpty(newItem.m_dropPrefab?.name))
                     {
                         MerchantNPCsPlugin.Logger.LogWarning($"Item {item.ItemName} has null prefab name, setting from original");
                         newItem.m_dropPrefab = itemDrop.gameObject;
                     }
-                    
+
                     // Add to inventory
                     if (player.GetInventory().AddItem(newItem))
                     {
@@ -624,14 +624,14 @@ namespace MerchantNPCs.MerchantTrading
 
                         // Force inventory update to ensure the item is properly registered
                         player.GetInventory().Changed();
-                        
+
                         // If this is equippable gear, make sure it's properly initialized
                         if (newItem.IsEquipable())
                         {
                             try
                             {
                                 // MerchantNPCsPlugin.Logger.LogInfo("Updating equipment after purchase");
-                                
+
                                 // Make sure the visual equipment component exists
                                 if (player.m_visEquipment == null)
                                 {
@@ -643,14 +643,14 @@ namespace MerchantNPCs.MerchantTrading
                                         player.m_visEquipment = player.gameObject.AddComponent<VisEquipment>();
                                     }
                                 }
-                                
+
                                 // Force inventory to update first
                                 player.GetInventory().Changed();
-                                
+
                                 // Let the game process for a frame to ensure inventory changes are registered
                                 // This is a safer approach than immediately trying to update equipment
                                 player.StartCoroutine(UpdatePlayerEquipmentDelayed(player, newItem));
-                                
+
                                 // MerchantNPCsPlugin.Logger.LogInfo("Equipment update initiated");
                             }
                             catch (Exception equipEx)
@@ -658,7 +658,7 @@ namespace MerchantNPCs.MerchantTrading
                                 MerchantNPCsPlugin.Logger.LogError($"Error updating equipment: {equipEx.Message}");
                             }
                         }
-                        
+
                         return true;
                     }
                     else
@@ -693,12 +693,12 @@ namespace MerchantNPCs.MerchantTrading
         {
             // Wait for a frame to let inventory changes propagate
             yield return null;
-            
+
             try
             {
                 // Force equipment update
                 player.SetupEquipment();
-                
+
                 // Force visual equipment update if component exists
                 if (player.m_visEquipment != null)
                 {
@@ -708,13 +708,13 @@ namespace MerchantNPCs.MerchantTrading
                 {
                     MerchantNPCsPlugin.Logger.LogWarning("Visual equipment component still null after initialization attempt");
                 }
-                
+
                 // Ensure ZDO is updated for network sync
                 if (player.m_nview && player.m_nview.IsValid())
                 {
                     player.GetInventory().Changed();
                 }
-                
+
                 // MerchantNPCsPlugin.Logger.LogInfo("Equipment update completed successfully");
             }
             catch (Exception ex)
@@ -722,7 +722,7 @@ namespace MerchantNPCs.MerchantTrading
                 MerchantNPCsPlugin.Logger.LogError($"Error in delayed equipment update: {ex.Message}");
             }
         }
-        
+
         /// <summary>
         /// Sells an item to a merchant
         /// </summary>
@@ -748,7 +748,7 @@ namespace MerchantNPCs.MerchantTrading
             player.GetInventory().RemoveItem(item.m_shared.m_name, quantity);
 
             // Add coins to player inventory
-            player.GetInventory().AddItem("Coins", totalValue, 1, 0, 0, "0");
+            AddCoins(player, totalValue);
             player.Message(MessageHud.MessageType.Center, $"You sold {quantity}x {item.m_shared.m_name} for {totalValue} coins");
 
             return true;
@@ -788,7 +788,7 @@ namespace MerchantNPCs.MerchantTrading
                     totalCoins += item.m_stack;
                 }
             }
-            
+
             // MerchantNPCsPlugin.Logger.LogInfo($"Player has {totalCoins} coins, needs {amount}");
             return totalCoins >= amount;
         }
@@ -800,10 +800,10 @@ namespace MerchantNPCs.MerchantTrading
         {
             int remainingAmount = amount;
             var inventory = player.GetInventory();
-            
+
             // Find coin items and remove them until we've removed enough
             List<ItemDrop.ItemData> coinItems = new List<ItemDrop.ItemData>();
-            
+
             // First, collect all coin items
             foreach (var item in inventory.GetAllItems())
             {
@@ -812,12 +812,12 @@ namespace MerchantNPCs.MerchantTrading
                     coinItems.Add(item);
                 }
             }
-            
+
             // Then remove coins from stacks
             foreach (var coinItem in coinItems)
             {
                 if (remainingAmount <= 0) break;
-                
+
                 if (coinItem.m_stack <= remainingAmount)
                 {
                     // Remove the entire stack
@@ -832,8 +832,50 @@ namespace MerchantNPCs.MerchantTrading
                     break;
                 }
             }
-            
+
             // MerchantNPCsPlugin.Logger.LogInfo($"Removed {amount} coins from player's inventory");
+        }
+
+        /// <summary>
+        /// Adds coins to a player's inventory.
+        /// The Deep North Inventory no longer has AddItem(string name, ...). AddItem(GameObject, int) caps
+        /// each call at the item's max stack size, so coins are added in chunks of that size.
+        /// </summary>
+        public void AddCoins(Player player, int amount)
+        {
+            if (player == null || amount <= 0)
+            {
+                return;
+            }
+
+            GameObject coinPrefab = ZNetScene.instance != null ? ZNetScene.instance.GetPrefab("Coins") : null;
+            if (coinPrefab == null && ObjectDB.instance != null)
+            {
+                coinPrefab = ObjectDB.instance.GetItemPrefab("Coins");
+            }
+
+            ItemDrop coinDrop = coinPrefab != null ? coinPrefab.GetComponent<ItemDrop>() : null;
+            if (coinDrop == null)
+            {
+                MerchantNPCsPlugin.Logger.LogError("Could not find the Coins prefab, no coins were added");
+                return;
+            }
+
+            int maxStack = Mathf.Max(1, coinDrop.m_itemData.m_shared.m_maxStackSize);
+            Inventory inventory = player.GetInventory();
+            int remaining = amount;
+
+            while (remaining > 0)
+            {
+                int chunk = Mathf.Min(remaining, maxStack);
+                if (!inventory.AddItem(coinPrefab, chunk))
+                {
+                    MerchantNPCsPlugin.Logger.LogWarning($"Inventory is full, could not add {remaining} coins");
+                    return;
+                }
+
+                remaining -= chunk;
+            }
         }
 
         /// <summary>
@@ -846,28 +888,28 @@ namespace MerchantNPCs.MerchantTrading
                 MerchantNPCsPlugin.Logger.LogError("Invalid parameters in HasEnoughInventorySpace");
                 return false;
             }
-            
+
             if (ZNetScene.instance == null)
             {
                 MerchantNPCsPlugin.Logger.LogError("ZNetScene.instance is null");
                 return true; // Assume there's enough space if we can't check properly
             }
-            
+
             if (itemData.m_shared == null)
             {
                 MerchantNPCsPlugin.Logger.LogError("itemData.m_shared is null");
                 return true; // Assume there's enough space if we can't check properly
             }
-            
+
             string itemName = itemData.m_shared.m_name;
             if (string.IsNullOrEmpty(itemName))
             {
                 MerchantNPCsPlugin.Logger.LogError("Item name is null or empty");
                 return true; // Assume there's enough space if we can't check properly
             }
-            
+
             // MerchantNPCsPlugin.Logger.LogInfo($"Checking inventory space for item: {itemName}");
-            
+
             // Try to get the prefab by name
             GameObject prefab = null;
             try
@@ -878,7 +920,7 @@ namespace MerchantNPCs.MerchantTrading
             {
                 MerchantNPCsPlugin.Logger.LogError($"Exception when getting prefab by name: {ex.Message}");
             }
-            
+
             // If that fails, try to get it by the prefab name if available
             if (prefab == null && itemData.m_dropPrefab != null)
             {
@@ -891,7 +933,7 @@ namespace MerchantNPCs.MerchantTrading
                     MerchantNPCsPlugin.Logger.LogError($"Exception when getting prefab by dropPrefab name: {ex.Message}");
                 }
             }
-            
+
             // If that still fails, try to get it from ObjectDB
             if (prefab == null && ObjectDB.instance != null)
             {
@@ -903,7 +945,7 @@ namespace MerchantNPCs.MerchantTrading
                 {
                     MerchantNPCsPlugin.Logger.LogError($"Exception when getting prefab from ObjectDB: {ex.Message}");
                 }
-                
+
                 // Last resort - try to find by the actual item name in the ObjectDB
                 if (prefab == null)
                 {
@@ -912,10 +954,10 @@ namespace MerchantNPCs.MerchantTrading
                         foreach (GameObject obj in ObjectDB.instance.m_items)
                         {
                             if (obj == null) continue;
-                            
+
                             ItemDrop component = obj.GetComponent<ItemDrop>();
-                            if (component != null && component.m_itemData != null && 
-                                component.m_itemData.m_shared != null && 
+                            if (component != null && component.m_itemData != null &&
+                                component.m_itemData.m_shared != null &&
                                 component.m_itemData.m_shared.m_name == itemName)
                             {
                                 prefab = obj;
@@ -929,13 +971,13 @@ namespace MerchantNPCs.MerchantTrading
                     }
                 }
             }
-            
+
             if (prefab == null)
             {
                 MerchantNPCsPlugin.Logger.LogError($"Could not find prefab for {itemName} - assuming inventory has space");
                 return true; // Assume there's enough space if we can't find the prefab
             }
-            
+
             // Check if the player can add the item
             try
             {

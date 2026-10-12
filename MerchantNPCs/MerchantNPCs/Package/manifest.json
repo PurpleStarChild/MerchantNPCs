@@ -1,10 +1,10 @@
 {
   "name": "MerchantNPCs",
-  "version_number": "0.0.4",
+  "version_number": "1.0.3",
   "website_url": "https://discord.gg/qGf5FdqhVC",
   "description": "A mod that adds buildable merchant NPCs to Valheim- Testing Phase",
   "dependencies": [
     "denikson-BepInExPack_Valheim-5.4.2100",
-    "ValheimModding-Jotunn-2.12.6"
+    "ValheimModding-Jotunn-2.30.2"
   ]
 }

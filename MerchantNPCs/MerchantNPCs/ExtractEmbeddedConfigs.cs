@@ -16,10 +16,10 @@ namespace MerchantNPCs
             {
                 // Debug: List all embedded resources
                 string[] allResources = Assembly.GetExecutingAssembly().GetManifestResourceNames();
-                Logger.LogInfo($"Found {allResources.Length} embedded resources:");
+                //Logger.LogInfo($"Found {allResources.Length} embedded resources:");
                 foreach (string resource in allResources)
                 {
-                    Logger.LogInfo($"  - {resource}");
+                    //Logger.LogInfo($"  - {resource}");
                 }
 
                 // Get the config directory path
@@ -29,7 +29,7 @@ namespace MerchantNPCs
                 if (!Directory.Exists(configDir))
                 {
                     Directory.CreateDirectory(configDir);
-                    Logger.LogInfo($"Created config directory: {configDir}");
+                    //Logger.LogInfo($"Created config directory: {configDir}");
                 }
                 
                 // List of config files to extract
@@ -73,7 +73,7 @@ namespace MerchantNPCs
                                     {
                                         resourceStream.CopyTo(fileStream);
                                     }
-                                    Logger.LogInfo($"Extracted config file: {fileName} from resource {resourceName}");
+                                    //Logger.LogInfo($"Extracted config file: {fileName} from resource {resourceName}");
                                     resourceFound = true;
                                     break;
                                 }
@@ -87,7 +87,7 @@ namespace MerchantNPCs
                             if (File.Exists(projectConfigPath))
                             {
                                 File.Copy(projectConfigPath, targetPath);
-                                Logger.LogInfo($"Copied config file from project directory: {fileName}");
+                                //Logger.LogInfo($"Copied config file from project directory: {fileName}");
                             }
                             else
                             {
@@ -95,7 +95,7 @@ namespace MerchantNPCs
                                 
                                 // As a last resort, create an empty config file
                                 File.WriteAllText(targetPath, $"# {fileName.Replace(".txt", "")} Merchant Items\n# Format: item:price\n\n# Add your items here\n");
-                                Logger.LogInfo($"Created empty config file: {fileName}");
+                                //Logger.LogInfo($"Created empty config file: {fileName}");
                             }
                         }
                     }

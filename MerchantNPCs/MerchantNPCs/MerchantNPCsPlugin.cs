@@ -19,13 +19,18 @@ using UnityEngine;
 namespace MerchantNPCs
 {
     [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
-    [BepInDependency(Jotunn.Main.ModGuid)]
+    // Jotunn 2.30.2 is the first version that supports the Valheim 1.0 / Deep North build menu
+    // (usage tags and tag-based custom categories), so refuse to load on anything older.
+    [BepInDependency(Jotunn.Main.ModGuid, MinJotunnVersion)]
     [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.Minor)]
     internal partial class MerchantNPCsPlugin : BaseUnityPlugin
     {
         public const string PluginGUID = "ruijven.merchantnpcs";
         public const string PluginName = "MerchantNPCs";
-        public const string PluginVersion = "1.0.1";
+        public const string PluginVersion = "1.0.3";
+
+        // Minimum Jotunn version this mod is built and tested against (also set in Package/manifest.json)
+        public const string MinJotunnVersion = "2.30.2";
 
         // Use this instance of the plugin for accessing the config and logger
         internal static MerchantNPCsPlugin Instance { get; private set; }
@@ -74,9 +79,14 @@ namespace MerchantNPCs
             ExtractEmbeddedConfigs();
 
             // Register events
+            // Fires before every vanilla prefab copy (every menu start). AddMerchantPieces unsubscribes
+            // itself because Jotunn caches custom pieces for the whole game session.
             PrefabManager.OnVanillaPrefabsAvailable += AddMerchantPieces;
-            
-            // Initialize the merchant trading system when the game world is loaded
+
+            // Initialize the merchant trading system when the game world is loaded.
+            // Unlike the prefab event above, this one is meant to stay subscribed: Jotunn raises it every time
+            // a new ZoneSystem becomes available (each world load), and the trading data (item prefabs from the
+            // new ZNetScene) must be rebuilt for every world.
             ZoneManager.OnVanillaLocationsAvailable += InitializeMerchantTrading;
 
             // Apply Harmony patches
@@ -150,9 +160,10 @@ namespace MerchantNPCs
             
             // Deep North Merchant
             var deepNorthConfig = new MerchantCostConfig();
-            deepNorthConfig.AddResourceRequirement(Config, "Deep North Merchant", 1, "FreezeGland", 200);
-            deepNorthConfig.AddResourceRequirement(Config, "Deep North Merchant", 2, "WolfPelt", 200);
-            deepNorthConfig.AddResourceRequirement(Config, "Deep North Merchant", 3, "TrophyGoblinKing", 20);
+            deepNorthConfig.AddResourceRequirement(Config, "Deep North Merchant", 1, "Frostwood", 20);
+            deepNorthConfig.AddResourceRequirement(Config, "Deep North Merchant", 2, "MooseHide", 10);
+            deepNorthConfig.AddResourceRequirement(Config, "Deep North Merchant", 3, "FrostCore", 10);
+            deepNorthConfig.AddResourceRequirement(Config, "Deep North Merchant", 4, "TrophyFader", 1);
             MerchantCosts["DeepNorth"] = deepNorthConfig;
             
             // Logger.LogInfo($"Initialized {MerchantCosts.Count} merchant cost configurations");
@@ -160,6 +171,10 @@ namespace MerchantNPCs
 
         private void AddMerchantPieces()
         {
+            // Jotunn raises OnVanillaPrefabsAvailable before every vanilla prefab copy,
+            // so unsubscribe to make sure the pieces are only registered once.
+            PrefabManager.OnVanillaPrefabsAvailable -= AddMerchantPieces;
+
             try
             {
                 // Load asset bundle
@@ -174,8 +189,9 @@ namespace MerchantNPCs
                 // Register all materials, prefabs, and icons
                 RegisterAllAssets();
 
-                // Create a custom piece table for merchant pieces
-                CreateMerchantPieceTab();
+                // Note: no custom piece table is needed. Merchants are added to the vanilla Hammer
+                // with the "Merchants" category (see MerchantPieces), which Jotunn shows as its own
+                // tag in the build menu.
 
                 // Initialize the merchant pieces handler
                 _merchantPieces = new MerchantPieces(_merchantAssetBundle, this);
@@ -253,62 +269,6 @@ namespace MerchantNPCs
                 Logger.LogError($"Error loading asset bundle: {ex.Message}\n{ex.StackTrace}");
             }
         }
-
-        private void CreateMerchantPieceTab()
-        {
-            try
-            {
-                // Create a custom tab for the hammer
-                Sprite tabSprite = null;
-                
-                // Try to load the tab sprite from the asset bundle
-                if (_merchantAssetBundle != null)
-                {
-                    // Use the trader icon as the tab icon
-                    tabSprite = _merchantAssetBundle.LoadAsset<Sprite>("tradericon_ru");
-                    
-                    if (tabSprite == null)
-                    {
-                        Logger.LogWarning("Could not load tradericon_ru from asset bundle, using default tab icon");
-                    }
-                }
-                
-                // Create a piece table config for the Hammer
-                PieceTableConfig tableConfig = new PieceTableConfig()
-                {
-                    CanRemovePieces = true,
-                    UseCategories = true,
-                    UseCustomCategories = true,
-                    CustomCategories = new string[] { "Merchants" }
-                };
-
-                // Create the custom piece table
-                CustomPieceTable merchantTable = new CustomPieceTable(
-                    "_MerchantPieceTable",     // Internal name for the piece table
-                    tableConfig                // Table configuration
-                );
-                
-                // Add the piece table to the game
-                PieceManager.Instance.AddPieceTable(merchantTable);
-                
-                // Register the custom category with the Hammer
-                PieceManager.Instance.AddPieceCategory("Merchants");
-                
-                // Log additional information for debugging
-                // Logger.LogInfo($"Created merchant piece table with name: _MerchantPieceTable");
-                // Logger.LogInfo($"Added custom category 'Merchants' to the Hammer");
-
-                // The table is already registered above with PieceManager.Instance.AddPieceTable()
-                
-                // Logger.LogInfo("Merchant piece tab created successfully");
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"Error creating merchant piece tab: {ex.Message}\n{ex.StackTrace}");
-            }
-        }
-
-
 
 /// <summary>
 /// Registers all materials, prefabs, and icons with the game

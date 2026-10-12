@@ -19,6 +19,10 @@ namespace MerchantNPCs
         // List to keep track of added pieces
         private readonly List<CustomPiece> _addedPieces = new List<CustomPiece>();
 
+        // Prefabs that already had their piece components set up. EnsurePieceComponents adds
+        // components (e.g. a collider), so it must only run once per prefab instance.
+        private static readonly HashSet<int> _preparedPrefabs = new HashSet<int>();
+
         // Constructor
         public MerchantPieces(AssetBundle assetBundle, MerchantNPCsPlugin plugin)
         {
@@ -115,8 +119,11 @@ namespace MerchantNPCs
                 {
                     Name = pieceName,
                     Description = description,
-                    PieceTable = "Hammer", // Use the vanilla hammer
+                    PieceTable = PieceTables.Hammer, // Use the vanilla hammer
+                    // Pieces of a custom category get their own "Merchants" tag button in the build menu
                     Category = "Merchants",
+                    // Set the usage tags explicitly instead of letting Jotunn guess them
+                    Usage = new[] { PieceUsages.Crafting },
                     Requirements = requirements.ToArray(), // Convert List to array
                     Icon = icon // Set the icon for the piece
                 };
@@ -143,6 +150,11 @@ namespace MerchantNPCs
         /// </summary>
         private void EnsurePieceComponents(GameObject prefab)
         {
+            if (!_preparedPrefabs.Add(prefab.GetInstanceID()))
+            {
+                return;
+            }
+
             try
             {
                 // Make sure the prefab has a Piece component to handle building requirements
@@ -495,9 +507,10 @@ namespace MerchantNPCs
         private void AddDeepNorthMerchant()
         {
             List<RequirementConfig> requirements = GetRequirementsFromConfig("DeepNorth",
-                ("FreezeGland", 200),
-                ("WolfPelt", 200),
-                ("TrophyFader", 20)
+                ("Frostwood", 20),
+                ("MooseHide", 10),
+                ("FrostCore", 10),
+                ("TrophyFader", 1)
             );
 
             AddMerchantPiece(

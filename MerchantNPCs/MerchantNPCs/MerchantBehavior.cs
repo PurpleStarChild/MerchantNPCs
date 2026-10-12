@@ -38,7 +38,7 @@ namespace MerchantNPCs
                     // Remove the (Clone) suffix if present
                     prefabName = prefabName.Replace("(Clone)", "");
                     string biomeName = prefabName.Replace("Merch_ru", "");
-                    
+
                     // Special case for BlackForest to add a space
                     if (biomeName == "Blackforest")
                     {
@@ -55,7 +55,7 @@ namespace MerchantNPCs
                         _merchantName = $"{biomeName} Merchant";
                         _merchantType = biomeName;
                     }
-                    
+
                     MerchantNPCsPlugin.Logger.LogInfo($"Set merchant name to {_merchantName} based on prefab {prefabName}");
                 }
                 else
@@ -94,6 +94,12 @@ namespace MerchantNPCs
             return _merchantName;
         }
 
+        // Added to the Hoverable interface by the Deep North update. No offset for the hover text.
+        public float GetHoverOffset()
+        {
+            return 0f;
+        }
+
         #endregion
 
         #region Interactable Implementation
@@ -101,7 +107,7 @@ namespace MerchantNPCs
         public bool Interact(Humanoid user, bool hold, bool alt)
         {
             MerchantNPCsPlugin.Logger.LogInfo($"Merchant {gameObject.name} interaction started");
-            
+
             if (hold)
             {
                 MerchantNPCsPlugin.Logger.LogInfo("Hold interaction not supported");
@@ -114,13 +120,13 @@ namespace MerchantNPCs
                 MerchantNPCsPlugin.Logger.LogError("User is not a Player");
                 return false;
             }
-            
+
             MerchantNPCsPlugin.Logger.LogInfo($"Player {player.GetPlayerName()} is interacting with merchant {_merchantName}");
 
             // Check if player is within interaction distance
             float distanceToPlayer = Vector3.Distance(player.transform.position, transform.position);
             MerchantNPCsPlugin.Logger.LogInfo($"Distance to player: {distanceToPlayer}, Interaction distance: {_interactionDistance}");
-            
+
             if (distanceToPlayer > _interactionDistance)
             {
                 // Player is too far away
@@ -159,13 +165,13 @@ namespace MerchantNPCs
             try
             {
                 MerchantNPCsPlugin.Logger.LogInfo("OpenMerchantUI method called");
-                
+
                 if (_interactingPlayer == null)
                 {
                     MerchantNPCsPlugin.Logger.LogError("Cannot open merchant UI: No interacting player");
                     return;
                 }
-                
+
                 MerchantNPCsPlugin.Logger.LogInfo($"Interacting player: {_interactingPlayer.GetPlayerName()}");
                 MerchantNPCsPlugin.Logger.LogInfo($"Merchant type: {_merchantType}");
 
@@ -174,21 +180,21 @@ namespace MerchantNPCs
                 {
                     MerchantNPCsPlugin.Logger.LogInfo("MerchantUI instance is null, initializing...");
                     MerchantUI.Initialize();
-                    
+
                     if (MerchantUI.Instance == null)
                     {
                         MerchantNPCsPlugin.Logger.LogError("Failed to initialize MerchantUI instance");
                         _interactingPlayer.Message(MessageHud.MessageType.Center, "Error initializing merchant UI");
                         return;
                     }
-                    
+
                     MerchantNPCsPlugin.Logger.LogInfo("MerchantUI instance initialized successfully");
                 }
                 else
                 {
                     MerchantNPCsPlugin.Logger.LogInfo("MerchantUI instance already exists");
                 }
-                
+
                 // Show the merchant UI for this merchant type
                 // The UI will be created on demand if it doesn't exist yet
                 MerchantNPCsPlugin.Logger.LogInfo("Calling MerchantUI.Show method...");
@@ -204,7 +210,7 @@ namespace MerchantNPCs
                 }
             }
         }
-        
+
         // OpenMerchantUIDelayed method removed - UI is now created on demand
     }
 }
